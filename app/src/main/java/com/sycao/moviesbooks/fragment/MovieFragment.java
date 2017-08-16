@@ -32,12 +32,14 @@ import io.reactivex.schedulers.Schedulers;
 public class MovieFragment extends Fragment {
     public static final String ARG_PAGE = "ARG_PAGE";
     private int mPage;
-    Disposable disposable;
+
     @BindView(R.id.rv_movie)
     RecyclerView recyclerView;
 
     @BindView(R.id.pb_movie)
     ProgressBar progressBar;
+
+    Disposable disposable;
 
     MovieListAdapter movieListAdapter;
 
