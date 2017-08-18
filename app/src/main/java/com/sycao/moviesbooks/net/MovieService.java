@@ -27,7 +27,7 @@ public interface MovieService {
      * @param id 电影ID
      */
     @GET("movie/subject/{id}")
-    void getMovieSubjectById(@Path("id") String id);
+    Observable<MovieEntity.SubjectsBean> getMovieSubjectById(@Path("id") String id);
 
     /**
      * 根据影人ID获取该影人详细信息

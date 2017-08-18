@@ -1,5 +1,6 @@
 package com.sycao.moviesbooks.fragment;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -10,11 +11,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import com.sycao.moviesbooks.R;
+import com.sycao.moviesbooks.activity.MovieDetailActivity;
 import com.sycao.moviesbooks.adapter.MovieListAdapter;
+import com.sycao.moviesbooks.adapter.OnRecyclerItemClickListener;
 import com.sycao.moviesbooks.model.MovieEntity;
 import com.sycao.moviesbooks.net.RetrofitUtil;
+import com.sycao.moviesbooks.utils.Constant;
+
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -43,6 +50,8 @@ public class MovieFragment extends Fragment {
 
     MovieListAdapter movieListAdapter;
 
+    List<MovieEntity.SubjectsBean> subjectsBeanList;
+
     public static MovieFragment newInstance(int page) {
 
         Bundle args = new Bundle();
@@ -60,12 +69,21 @@ public class MovieFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(final LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_movie, container, false);
         ButterKnife.bind(this, view);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         movieListAdapter = new MovieListAdapter(getContext());
         recyclerView.setAdapter(movieListAdapter);
+        recyclerView.addOnItemTouchListener(new OnRecyclerItemClickListener(recyclerView) {
+            @Override
+            public void onItemClick(RecyclerView.ViewHolder vh) {
+                Toast.makeText(getContext(), String.valueOf(vh.getAdapterPosition()), Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(getContext(), MovieDetailActivity.class);
+                intent.putExtra(Constant.ParamKey.MOVIE_ID,subjectsBeanList.get(vh.getAdapterPosition()).getId());
+                startActivity(intent);
+            }
+        });
 
         disposable = RetrofitUtil.getInstance().getMovieService().getMoviesTop250(0, 10)
                 .subscribeOn(Schedulers.io())
@@ -79,6 +97,7 @@ public class MovieFragment extends Fragment {
                     @Override
                     public void onNext(@NonNull MovieEntity movieEntity) {
                         Log.d("disposable:", "onNext");
+                        subjectsBeanList = movieEntity.getSubjects();
                         progressBar.setVisibility(View.GONE);
                         recyclerView.setVisibility(View.VISIBLE);
                         movieListAdapter.setData(movieEntity.getSubjects());
@@ -87,7 +106,6 @@ public class MovieFragment extends Fragment {
                     @Override
                     public void onError(@NonNull Throwable e) {
                         Log.d("disposable:", "onError");
-
                     }
 
                     @Override

@@ -37,15 +37,18 @@ public class MainActivity extends AppCompatActivity {
         simpleFragmentPageAdapter = new SimpleFragmentPageAdapter(getSupportFragmentManager(), this);
 
         mViewPager.setAdapter(simpleFragmentPageAdapter);
+        mViewPager.setCurrentItem(1);
         mTabLayout.setupWithViewPager(mViewPager);
+        mTabLayout.getTabAt(1).select();
     }
 
     @Override
     public void onBackPressed() {
-        if (mViewPager.getCurrentItem()==0){
+        /*if (mViewPager.getCurrentItem()==0){
             super.onBackPressed();
         }else{
             mViewPager.setCurrentItem(mViewPager.getCurrentItem()-1);
-        }
+        }*/
+        super.onBackPressed();
     }
 }
