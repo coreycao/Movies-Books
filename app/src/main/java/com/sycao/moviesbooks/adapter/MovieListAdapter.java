@@ -39,6 +39,11 @@ public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.View
         notifyDataSetChanged();
     }
 
+    public void loadMoreData(List<MovieEntity.SubjectsBean> movieList) {
+        data.addAll(movieList);
+        notifyDataSetChanged();
+    }
+
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_movie_list, parent, false);
@@ -47,7 +52,7 @@ public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.View
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        holder.tvMovieTitle.setText(data.get(position).getTitle());
+        holder.tvMovieTitle.setText("TOP"+String.valueOf(position+1)+"："+data.get(position).getTitle());
         StringBuilder sb = new StringBuilder();
         for (MovieEntity.SubjectsBean.CastsBean cast : data.get(position).getCasts()) {
             if (data.get(position).getCasts().indexOf(cast) == 0) {

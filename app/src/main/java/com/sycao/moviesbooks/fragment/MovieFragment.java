@@ -39,6 +39,9 @@ import io.reactivex.schedulers.Schedulers;
 public class MovieFragment extends Fragment {
     public static final String ARG_PAGE = "ARG_PAGE";
     private int mPage;
+    private final int pageSize = 10;
+    private int page = 0;
+
 
     @BindView(R.id.rv_movie)
     RecyclerView recyclerView;
@@ -78,14 +81,44 @@ public class MovieFragment extends Fragment {
         recyclerView.addOnItemTouchListener(new OnRecyclerItemClickListener(recyclerView) {
             @Override
             public void onItemClick(RecyclerView.ViewHolder vh) {
-                Toast.makeText(getContext(), String.valueOf(vh.getAdapterPosition()), Toast.LENGTH_LONG).show();
-                Intent intent = new Intent(getContext(), MovieDetailActivity.class);
-                intent.putExtra(Constant.ParamKey.MOVIE_ID,subjectsBeanList.get(vh.getAdapterPosition()).getId());
-                startActivity(intent);
+                if (vh.getAdapterPosition() == (subjectsBeanList.size() - 1)) {
+                    loadMoreData();
+                } else {
+                    Toast.makeText(getContext(), String.valueOf(vh.getAdapterPosition()), Toast.LENGTH_LONG).show();
+                    Intent intent = new Intent(getContext(), MovieDetailActivity.class);
+                    intent.putExtra(Constant.ParamKey.MOVIE_ID, subjectsBeanList.get(vh.getAdapterPosition()).getId());
+                    startActivity(intent);
+                }
             }
         });
 
-        disposable = RetrofitUtil.getInstance().getMovieService().getMoviesTop250(0, 10)
+
+
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                Log.d("onScrollStateChanged", String.valueOf(newState));
+            }
+
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+//                Log.d("onScrolled",String.valueOf(dy));
+                LinearLayoutManager linearLayoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+/*                Log.d("onScrolled-last",String.valueOf(linearLayoutManager.findLastVisibleItemPosition()));
+                Log.d("onScrolled-complete",String.valueOf(linearLayoutManager.findLastCompletelyVisibleItemPosition()));*/
+                if (dy >= 0 && linearLayoutManager.findLastVisibleItemPosition()==(subjectsBeanList.size()-1)){
+                    // TODO: 滚动到底部后会触发多次 待解决
+                    loadMoreData();
+                    Toast.makeText(getContext(),"loading...",Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+
+
+        disposable = RetrofitUtil.getInstance().getMovieService()
+                .getMoviesTop250(page * pageSize, pageSize)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeWith(new DisposableObserver<MovieEntity>() {
@@ -98,9 +131,7 @@ public class MovieFragment extends Fragment {
                     public void onNext(@NonNull MovieEntity movieEntity) {
                         Log.d("disposable:", "onNext");
                         subjectsBeanList = movieEntity.getSubjects();
-                        progressBar.setVisibility(View.GONE);
-                        recyclerView.setVisibility(View.VISIBLE);
-                        movieListAdapter.setData(movieEntity.getSubjects());
+                        movieListAdapter.setData(subjectsBeanList);
                     }
 
                     @Override
@@ -111,10 +142,38 @@ public class MovieFragment extends Fragment {
                     @Override
                     public void onComplete() {
                         Log.d("disposable:", "onComplete");
+                        progressBar.setVisibility(View.GONE);
+                        recyclerView.setVisibility(View.VISIBLE);
                     }
                 });
 
         return view;
+    }
+
+    private void loadMoreData() {
+        this.page++;
+        disposable = RetrofitUtil.getInstance().getMovieService()
+                .getMoviesTop250(page * pageSize, pageSize)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeWith(new DisposableObserver<MovieEntity>() {
+                    @Override
+                    public void onNext(@NonNull MovieEntity movieEntity) {
+                        subjectsBeanList.addAll(movieEntity.getSubjects());
+//                        movieListAdapter.setData(subjectsBeanList);
+                        movieListAdapter.loadMoreData(movieEntity.getSubjects());
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
     }
 
     @Override
